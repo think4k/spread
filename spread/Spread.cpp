@@ -4,6 +4,15 @@ CSpread gSpread;
 
 void CSpread::ServerActivate()
 {
+    // Activate Debug Mode
+    //
+    // 0 Disabled
+    // 1 Enabled
+    //
+    // Default "1"
+    // sc_debug "0"
+    static cvar_t tDebyg = {"sc_debug", "0", FCVAR_SERVER, 0.0f, NULL};
+
     // Activate Plugin
     //
     // 0 Disabled
@@ -53,6 +62,50 @@ void CSpread::ServerActivate()
     // sc_spread "0.0"
     static cvar_t tSpread = {"sc_spread", "0.0", FCVAR_SERVER, 0.0f, NULL};
 
+    // Weapons blocked from spread control fix
+    //
+    // To block weapon: Put 1 on weapon position
+    // To allow weapon: Put 0 on weapon slot
+    //
+	// 0 Not Used
+	// 1 P228
+	// 2 GLOCK
+	// 3 SCOUT
+	// 4 HEGRENADE
+	// 5 XM1014
+	// 6 C4
+	// 7 MAC10
+	// 8 AUG
+	// 9 SMOKEGRENADE
+	// 10 ELITE
+	// 11 FIVESEVEN
+	// 12 UMP45
+	// 13 SG550
+	// 14 GALIL
+	// 15 FAMAS
+	// 16 USP
+	// 17 GLOCK18
+	// 18 AWP
+	// 19 MP5N
+	// 20 M249
+	// 21 M3
+	// 22 M4A1
+	// 23 TMP
+	// 24 G3SG1
+	// 25 FLASHBANG
+	// 26 DEAGLE
+	// 27 SG552
+	// 28 AK47
+	// 29 KNIFE
+	// 30 P90
+    //
+    // Default "000000000000000000000000000000"
+    // sc_weapons_block "000000000000000000000000000000"
+    static cvar_t tWeapons = {"sc_weapons_block", "000000000000000000000000000000", FCVAR_SERVER, 0.0f, NULL};
+
+    g_engfuncs.pfnCVarRegister(&tDebyg);
+    this->m_Debug = g_engfuncs.pfnCVarGetPointer(tDebyg.name);
+
     g_engfuncs.pfnCVarRegister(&tActive);
     this->m_Active = g_engfuncs.pfnCVarGetPointer(tActive.name);
 
@@ -67,6 +120,9 @@ void CSpread::ServerActivate()
 
     g_engfuncs.pfnCVarRegister(&tSpread);
     this->m_Spread = g_engfuncs.pfnCVarGetPointer(tSpread.name);
+
+    g_engfuncs.pfnCVarRegister(&tWeapons);
+    this->m_Weapons = g_engfuncs.pfnCVarGetPointer(tWeapons.name);
 }
 
 float CSpread::GetSpread(CBaseEntity *pEntity, Vector &vecSrc, Vector &vecDirShooting, float vecSpread, float flDistance, int iPenetration, int iBulletType, int iDamage, float flRangeModifier, entvars_t *pevAttacker, bool bPistol, int shared_rand)
@@ -79,11 +135,27 @@ float CSpread::GetSpread(CBaseEntity *pEntity, Vector &vecSrc, Vector &vecDirSho
 
             if (Player)
             {
+                bool DebugMode = (this->m_Debug && this->m_Debug->value > 0.0f);
+
                 // If player is not on ground, block spread fix
                 if (this->m_GroundCheck)
                 {
                     if (this->m_GroundCheck->value > 0.0f)
                     {
+                        if (DebugMode)
+                        {
+                            this->ClientPrint
+                            (
+                                Player->edict(),
+                                E_PRINT::CHAT,
+                                "[%s] Ground Check: %2.2f (OnGround: %s) (Pass: %s)",
+                                Plugin_info.logtag,
+                                this->m_GroundCheck->value,
+                                (Player->pev->flags & FL_ONGROUND) ? "Yes" : "No",
+                                (Player->pev->flags & FL_ONGROUND) ? "Yes" : "No"
+                            );
+                        }
+
                         if (!(Player->pev->flags & FL_ONGROUND))
                         {
                             return vecSpread;
@@ -98,6 +170,21 @@ float CSpread::GetSpread(CBaseEntity *pEntity, Vector &vecSrc, Vector &vecDirSho
                     {
                         if (Player->pev->maxspeed > 0.0f)
                         {
+                            if (DebugMode)
+                            {
+                                this->ClientPrint
+                                (
+                                    Player->edict(),
+                                    E_PRINT::CHAT,
+                                    "[%s] Max Speed Divisor: %2.2f (Player Velocity: %2.2f) (MaxSpeed: %2.2f) (Pass: %s)",
+                                    Plugin_info.logtag,
+                                    this->m_MaxSpeed->value,
+                                    Player->pev->velocity.Length2D(),
+                                    Player->pev->maxspeed,
+                                    (Player->pev->velocity.Length2D() <= (Player->pev->maxspeed / this->m_MaxSpeed->value)) ? "Yes" : "No"
+                                );
+                            }
+
                             if (Player->pev->velocity.Length2D() > (Player->pev->maxspeed / this->m_MaxSpeed->value))
                             {
                                 return vecSpread;
@@ -111,9 +198,51 @@ float CSpread::GetSpread(CBaseEntity *pEntity, Vector &vecSrc, Vector &vecDirSho
                 {
                     if (this->m_MaxPunchAngle->value >= 0.0f)
                     {
+                        if (DebugMode)
+                        {
+                            this->ClientPrint
+                            (
+                                Player->edict(),
+                                E_PRINT::CHAT,
+                                "[%s] Max Punch Angle: %2.2f (Player Punch Angle: %2.2f) (Pass: %s)",
+                                Plugin_info.logtag,
+                                this->m_MaxPunchAngle->value,
+                                Player->pev->punchangle.Length2D(),
+                                (Player->pev->punchangle.Length2D() <= this->m_MaxPunchAngle->value) ? "Yes" : "No"
+                            );
+                        }
+                        
                         if (Player->pev->punchangle.Length2D() > this->m_MaxPunchAngle->value)
                         {
                             return vecSpread;
+                        }
+                    }
+                }
+
+                // Check Blocked Weapons
+                if (this->m_Weapons)
+                {
+                    if (this->m_Weapons->string[0u] != '\0')
+                    {
+                        if (Player->m_pActiveItem->m_iId >= WEAPON_P228 && Player->m_pActiveItem->m_iId <= WEAPON_P90)
+                        {
+                            if (DebugMode)
+                            {
+                                this->ClientPrint
+                                (
+                                    Player->edict(),
+                                    E_PRINT::CHAT,
+                                    "[%s] Weapon Position: %d (Is Blocked: %s)",
+                                    Plugin_info.logtag,
+                                    Player->m_pActiveItem->m_iId,
+                                    (this->m_Weapons->string[Player->m_pActiveItem->m_iId] != '0') ? "Yes" : "No"
+                                );
+                            }
+                            
+                            if (this->m_Weapons->string[Player->m_pActiveItem->m_iId] != '0')
+                            {
+                                return vecSpread;
+                            }
                         }
                     }
                 }
@@ -140,4 +269,48 @@ float CSpread::GetSpread(CBaseEntity *pEntity, Vector &vecSrc, Vector &vecDirSho
     }
 
     return vecSpread;
+}
+
+void CSpread::ClientPrint(edict_t *pEntity, int iMsgDest, const char *Format, ...)
+{
+	va_list argList;
+
+	va_start(argList, Format);
+
+	char Buffer[188] = { 0 };
+
+	int Length = vsnprintf(Buffer, sizeof(Buffer), Format, argList);
+
+	va_end(argList);
+
+	if (iMsgDest == E_PRINT::CONSOLE)
+	{
+		if (Length > 125)
+		{
+			Length = 125;
+		}
+
+		Buffer[Length++] = '\n';
+		Buffer[Length++] = '\n';
+		Buffer[Length] = 0;
+	}
+
+	static int iMsgTextMsg;
+
+	if (iMsgTextMsg || (iMsgTextMsg = gpMetaUtilFuncs->pfnGetUserMsgID(PLID, "TextMsg", NULL)))
+	{
+		if (!FNullEnt(pEntity))
+		{
+			g_engfuncs.pfnMessageBegin(MSG_ONE, iMsgTextMsg, nullptr, pEntity);
+		}
+		else
+		{
+			g_engfuncs.pfnMessageBegin(MSG_BROADCAST, iMsgTextMsg, nullptr, nullptr);
+		}
+
+		g_engfuncs.pfnWriteByte(iMsgDest);
+		g_engfuncs.pfnWriteString("%s");
+		g_engfuncs.pfnWriteString(Buffer);
+		g_engfuncs.pfnMessageEnd();
+	}
 }
