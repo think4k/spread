@@ -11,7 +11,7 @@ void CSpread::ServerActivate()
     //
     // Default "1"
     // sc_debug "0"
-    static cvar_t tDebyg = {"sc_debug", "0", FCVAR_SERVER, 0.0f, NULL};
+    static cvar_t tDebug = {"sc_debug", "0", FCVAR_SERVER, 0.0f, NULL};
 
     // Activate Plugin
     //
@@ -103,8 +103,8 @@ void CSpread::ServerActivate()
     // sc_weapons_block "000000000000000000000000000000"
     static cvar_t tWeapons = {"sc_weapons_block", "000000000000000000000000000000", FCVAR_SERVER, 0.0f, NULL};
 
-    g_engfuncs.pfnCVarRegister(&tDebyg);
-    this->m_Debug = g_engfuncs.pfnCVarGetPointer(tDebyg.name);
+    g_engfuncs.pfnCVarRegister(&tDebug);
+    this->m_Debug = g_engfuncs.pfnCVarGetPointer(tDebug.name);
 
     g_engfuncs.pfnCVarRegister(&tActive);
     this->m_Active = g_engfuncs.pfnCVarGetPointer(tActive.name);
