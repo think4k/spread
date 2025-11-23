@@ -5,7 +5,7 @@ plugin_info_t Plugin_info =
 {
 	META_INTERFACE_VERSION,
 	"Spread Control Plugin",
-	"0.0.2",
+	"0.0.3",
 	__DATE__,
 	"SmileY",
 	"https://github.com/SmileYzn/spread",
