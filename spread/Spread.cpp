@@ -11,7 +11,7 @@ void CSpread::ServerActivate()
     //
     // Default "1"
     // sc_debug "0"
-    static cvar_t tDebug = {"sc_debug", "0", FCVAR_SERVER, 0.0f, NULL};
+    static cvar_t tDebug = {"sc_debug", "0", 0.0f, NULL};
 
     // Activate Plugin
     //
@@ -20,7 +20,7 @@ void CSpread::ServerActivate()
     //
     // Default "1"
     // sc_active "1"
-    static cvar_t tActive = {"sc_active", "1", FCVAR_SERVER, 1.0f, NULL};
+    static cvar_t tActive = {"sc_active", "1", 1.0f, NULL};
 
     // Check if the player is on ground to apply fix
     //
@@ -29,7 +29,7 @@ void CSpread::ServerActivate()
     //
     // Default "1"
     // sc_ground_check "1"
-    static cvar_t tGroundCheck = {"sc_ground_check", "1", FCVAR_SERVER, 1.0f, NULL};
+    static cvar_t tGroundCheck = {"sc_ground_check", "1", 1.0f, NULL};
 
     // Maximum player speed divisor:
     // Checks if the player moves above the speed:
@@ -40,7 +40,7 @@ void CSpread::ServerActivate()
     //
     // Default "2.0"
     // sc_max_speed "2.0"
-    static cvar_t tMaxSpeed = {"sc_max_speed", "2.0", FCVAR_SERVER, 2.0f, NULL};
+    static cvar_t tMaxSpeed = {"sc_max_speed", "2.0", 2.0f, NULL};
 
     // Maximum player punch angle while shotting:
     // The first shot always have 0.0 (Zero) of punch angle
@@ -51,7 +51,7 @@ void CSpread::ServerActivate()
     //
     // Default "2.0"
     // sc_max_punch_angle "2.0"
-    static cvar_t tMaxPunchAngle = {"sc_max_punch_angle", "0.0", FCVAR_SERVER, 0.0f, NULL};
+    static cvar_t tMaxPunchAngle = {"sc_max_punch_angle", "0.0", 0.0f, NULL};
 
     // Spread value applied when all checks has passed
     //
@@ -60,7 +60,7 @@ void CSpread::ServerActivate()
     //
     // Default "0.0"
     // sc_spread "0.0"
-    static cvar_t tSpread = {"sc_spread", "0.0", FCVAR_SERVER, 0.0f, NULL};
+    static cvar_t tSpread = {"sc_spread", "0.0", 0.0f, NULL};
 
     // Weapons blocked from spread control fix
     //
@@ -101,7 +101,7 @@ void CSpread::ServerActivate()
     //
     // Default "000000000000000000000000000000"
     // sc_weapons_block "000000000000000000000000000000"
-    static cvar_t tWeapons = {"sc_weapons_block", "000000000000000000000000000000", FCVAR_SERVER, 0.0f, NULL};
+    static cvar_t tWeapons = {"sc_weapons_block", "000000000000000000000000000000", 0.0f, NULL};
 
     g_engfuncs.pfnCVarRegister(&tDebug);
     this->m_Debug = g_engfuncs.pfnCVarGetPointer(tDebug.name);
